@@ -11,6 +11,7 @@ interface AnalysisResult {
   matchScore: number;
   matchedSkills: string[];
   gaps: string[];
+  rawContent?: string;
 }
 
 const DashboardPage = () => {
@@ -64,34 +65,120 @@ const DashboardPage = () => {
 
     // Simulate API delay and response
     setTimeout(() => {
-      // Generate a random match score between 65 and 95
-      const score = Math.floor(Math.random() * 31) + 65;
+      // Mock response based on the provided JSON
+      const mockRawContent = `Match Score: 75%
+
+### Skill Match: 
+- The candidate's technical skills align well with the job requirements. They have proficiency in Python, JavaScript, SQL, and knowledge of AI, which are essential for this role. Additionally, their experience with cloud technologies, such as AWS and Google Cloud Platform, is a strong advantage. 
+- However, there is no explicit mention of experience with TypeScript, webhooks, vector databases, or data embeddings, which are required skills for the position. 
+
+### Tools/Technologies Overlap: 
+- The candidate's resume showcases a strong understanding of various tools and technologies. They have worked with AWS services (EC2, S3, Lambda, RDS), Docker, Kubernetes, and Jenkins, which are relevant to the job. 
+- Additionally, their proficiency in Visual Studio, IntelliJ, VS Code, and Linux demonstrates a solid development foundation. 
+- While the candidate doesn't explicitly mention experience with all the tools listed in the job description, their knowledge of similar tools and willingness to learn new ones (as evidenced by their work experience) could make up for this gap. 
+
+### Past Experience Relevance: 
+- The candidate's work experience as a Software Engineer and Intern shows their familiarity with software development and engineering practices. Their internship at Techdefence Labs, focusing on security, is particularly relevant to the Knowledge Ops role, indicating an understanding of operational aspects. 
+- However, the resume lacks specific examples of integrating AI into solutions or working with generative AI technologies, which are key aspects of the Applied AI Intern role. 
+
+### Culture Fit: 
+- The candidate's soft skills, including collaboration, communication, teamwork, and agile development practices, align well with the culture fit requirements for this role. Their ability to work with cross-functional teams and adapt to new tools demonstrates a good cultural fit. 
+
+### Gaps or Missing Elements: 
+- The resume lacks a summary section, which could provide a quick overview of the candidate's skills and career goals. 
+- While the work experience section is impressive, it could benefit from further quantification of accomplishments and a stronger emphasis on the impact of their contributions. This would help demonstrate the business value they can bring to DevRev. 
+
+Overall, the candidate's resume shows a strong match in terms of technical skills, tools, and culture fit. However, there are some gaps in specific skill requirements, experience with generative AI, and the lack of a resume summary. Taking into account all the factors, the resume-to-job match score is 75%`;
       
-      // Mock matched skills
+      // Mock matched skills and gaps for the cards
       const matchedSkills = [
-        "React.js",
-        "TypeScript",
-        "Frontend Development",
-        "UI/UX Design",
-        "RESTful APIs"
+        "Python",
+        "JavaScript",
+        "SQL",
+        "AI knowledge",
+        "AWS",
+        "Google Cloud Platform"
       ];
       
-      // Mock gaps/missing areas
       const gaps = [
-        "Experience with GraphQL",
-        "Unit testing frameworks",
-        "CI/CD pipeline knowledge",
-        "Docker containerization"
+        "TypeScript",
+        "Webhooks",
+        "Vector databases",
+        "Data embeddings",
+        "Generative AI technologies"
       ];
 
       setAnalysisResult({
-        matchScore: score,
+        matchScore: 75,
         matchedSkills,
-        gaps
+        gaps,
+        rawContent: mockRawContent
       });
       
       setIsAnalyzing(false);
     }, 1500);
+  };
+
+  const formatContent = (content: string) => {
+    if (!content) return null;
+    
+    // Split by line breaks to handle each section
+    const sections = content.split('\n\n');
+    
+    return (
+      <div className="space-y-4">
+        {sections.map((section, index) => {
+          if (section.startsWith('###')) {
+            // This is a header section
+            const [header, ...contentLines] = section.split('\n');
+            return (
+              <div key={index} className="mt-6">
+                <h3 className="text-xl font-bold text-primary">{header.replace('### ', '')}</h3>
+                <div className="mt-2">
+                  {contentLines.map((line, i) => (
+                    <p key={i} className="py-1">
+                      {line.startsWith('- ') ? (
+                        <span className="flex">
+                          <span className="mr-2">•</span>
+                          <span>{line.substring(2)}</span>
+                        </span>
+                      ) : (
+                        line
+                      )}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          } else if (section.startsWith('Match Score:')) {
+            // This is the match score line
+            return (
+              <div key={index} className="text-center">
+                <h2 className="text-3xl font-bold text-primary">{section}</h2>
+              </div>
+            );
+          } else {
+            // This is a regular paragraph
+            return (
+              <div key={index} className="my-4">
+                {section.split('\n').map((line, i) => (
+                  <p key={i} className="py-1">
+                    {line.startsWith('- ') ? (
+                      <span className="flex">
+                        <span className="mr-2">•</span>
+                        <span>{line.substring(2)}</span>
+                      </span>
+                    ) : (
+                      line
+                    )}
+                  </p>
+                ))}
+              </div>
+            );
+          }
+        })}
+      </div>
+    );
   };
 
   return (
@@ -181,9 +268,7 @@ const DashboardPage = () => {
 
         {/* Results Section */}
         {analysisResult && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-semibold mb-6 text-center">Analysis Results</h2>
-            
+          <div className="animate-fade-in space-y-6">
             {/* Match Score Card */}
             <Card className="mb-6">
               <CardHeader>
@@ -194,7 +279,7 @@ const DashboardPage = () => {
                 <CardDescription>How well your resume matches the job requirements</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="w-full bg-gray-200 rounded-full h-6">
+                <div className="w-full bg-gray-200 rounded-full h-6 mb-2">
                   <div 
                     className={`h-6 rounded-full ${
                       analysisResult.matchScore >= 80 ? 'bg-green-600' : 
@@ -203,9 +288,22 @@ const DashboardPage = () => {
                     style={{ width: `${analysisResult.matchScore}%` }}
                   ></div>
                 </div>
-                <p className="text-right font-bold mt-1">{analysisResult.matchScore}%</p>
+                <p className="text-right font-bold">{analysisResult.matchScore}%</p>
               </CardContent>
             </Card>
+            
+            {/* Detailed Analysis Section */}
+            {analysisResult.rawContent && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Detailed Analysis</CardTitle>
+                  <CardDescription>Comprehensive review of how your resume matches the job description</CardDescription>
+                </CardHeader>
+                <CardContent className="prose max-w-none">
+                  {formatContent(analysisResult.rawContent)}
+                </CardContent>
+              </Card>
+            )}
             
             <div className="grid md:grid-cols-2 gap-6">
               {/* Matched Skills Card */}

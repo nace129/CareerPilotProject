@@ -6,14 +6,21 @@ import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 // Define the structure for resume analysis results
 interface ResumeAnalysis {
-  skills: string[];
-  education: string[];
-  experience: string[];
-  weakAreas: string[];
-  suggestions: string[];
+  gaps: string[];
+  soft_skills: string[];
+  summary: string | null;
+  technical_skills: string[];
+  tools: string[];
+  work_experience: Array<{
+    role: string;
+    company: string;
+    duration: string;
+    description?: string[];
+  }>;
 }
 
 const ResumeAnalysisPage = () => {
@@ -50,38 +57,78 @@ const ResumeAnalysisPage = () => {
       description: "Please wait while we analyze your resume...",
     });
 
-    // Mock API call - in a real implementation, this would send the file to a backend
+    // Mock API call with the provided JSON structure
     setTimeout(() => {
-      // Mock analysis result
+      // Mock analysis result based on the provided JSON structure
       const mockAnalysis: ResumeAnalysis = {
-        skills: [
-          "React", "TypeScript", "JavaScript", "HTML/CSS", 
-          "Node.js", "Express", "MongoDB", "Git", 
-          "RESTful APIs", "Agile Development"
+        gaps: [
+          "No explicit experience with TypeScript",
+          "No mention of vector databases",
+          "Limited experience with generative AI",
+          "Missing quantifiable achievements",
+          "No resume summary section"
         ],
-        education: [
-          "Bachelor's Degree in Computer Science, University of Technology (2018-2022)",
-          "Full Stack Web Development Certification, CodeAcademy (2022)"
+        soft_skills: [
+          "Communication",
+          "Teamwork",
+          "Problem-solving",
+          "Adaptability",
+          "Time management",
+          "Collaboration"
         ],
-        experience: [
-          "Frontend Developer at TechSolutions (2022-Present)",
-          "Web Development Intern at StartupCo (2021)"
+        summary: null,
+        technical_skills: [
+          "Python",
+          "JavaScript",
+          "SQL",
+          "AWS",
+          "Docker",
+          "Kubernetes",
+          "Machine Learning basics",
+          "API development",
+          "Git version control"
         ],
-        weakAreas: [
-          "Limited experience with cloud platforms (AWS, Azure)",
-          "No mention of testing frameworks or methodologies",
-          "Lacks evidence of team leadership or project management"
+        tools: [
+          "Visual Studio Code",
+          "AWS Services (EC2, S3, Lambda)",
+          "Docker",
+          "Jenkins",
+          "Linux",
+          "IntelliJ",
+          "GitHub",
+          "Jira"
         ],
-        suggestions: [
-          "Add quantifiable achievements and impact metrics for each role",
-          "Include specific examples of projects you've worked on",
-          "Highlight any collaborative work or team contributions",
-          "Consider adding relevant certifications to strengthen your profile"
+        work_experience: [
+          {
+            role: "Software Engineer",
+            company: "TechCorp Inc.",
+            duration: "Jun 2022 - Present",
+            description: [
+              "Developed and maintained web applications using JavaScript",
+              "Implemented CI/CD pipelines with Jenkins",
+              "Collaborated with cross-functional teams on project delivery"
+            ]
+          },
+          {
+            role: "Intern",
+            company: "Techdefence Labs",
+            duration: "Jan 2021 - May 2022",
+            description: [
+              "Assisted in security-related software development",
+              "Learned cloud infrastructure and deployment",
+              "Worked on data analysis using Python"
+            ]
+          }
         ]
       };
       
       setAnalysis(mockAnalysis);
       setIsLoading(false);
+      
+      toast({
+        title: "Analysis Complete",
+        description: "We've analyzed your resume!",
+      });
     }, 2000);
   };
 
@@ -91,7 +138,7 @@ const ResumeAnalysisPage = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-center">Resume Analysis</h1>
         
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Resume Upload Section */}
           <Card className="mb-6">
             <CardHeader>
@@ -150,70 +197,105 @@ const ResumeAnalysisPage = () => {
                 <CardDescription>Based on your uploaded resume</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Skills Section */}
+                {/* Summary Section */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Skills</h3>
+                  <h3 className="text-lg font-semibold mb-2">Summary</h3>
+                  {analysis.summary ? (
+                    <p>{analysis.summary}</p>
+                  ) : (
+                    <p className="text-amber-600">Resume summary not found.</p>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                {/* Technical Skills Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Technical Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {analysis.skills.map((skill, index) => (
-                      <span 
+                    {analysis.technical_skills.map((skill, index) => (
+                      <Badge 
                         key={index} 
-                        className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                        variant="secondary"
+                        className="bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
                       >
                         {skill}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 </div>
                 
                 <Separator />
                 
-                {/* Education Section */}
+                {/* Soft Skills Section */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Education</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {analysis.education.map((item, index) => (
-                      <li key={index}>{item}</li>
+                  <h3 className="text-lg font-semibold mb-2">Soft Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.soft_skills.map((skill, index) => (
+                      <Badge 
+                        key={index}
+                        variant="outline" 
+                        className="bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
+                      >
+                        {skill}
+                      </Badge>
                     ))}
-                  </ul>
+                  </div>
                 </div>
                 
                 <Separator />
                 
-                {/* Experience Section */}
+                {/* Tools Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Tools & Technologies</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.tools.map((tool, index) => (
+                      <Badge 
+                        key={index}
+                        variant="secondary" 
+                        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        {tool}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                {/* Work Experience Section */}
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Work Experience</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {analysis.experience.map((item, index) => (
-                      <li key={index}>{item}</li>
+                  <div className="space-y-4">
+                    {analysis.work_experience.map((exp, index) => (
+                      <div key={index} className="border-l-2 border-gray-300 pl-4 py-1">
+                        <h4 className="font-semibold">{exp.role}</h4>
+                        <div className="text-sm flex justify-between">
+                          <span className="text-gray-700">{exp.company}</span>
+                          <span className="text-gray-500">{exp.duration}</span>
+                        </div>
+                        {exp.description && (
+                          <ul className="mt-2 list-disc list-inside text-sm text-gray-700">
+                            {exp.description.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
                 
                 <Separator />
                 
-                {/* Weak Areas Section */}
+                {/* Gaps Section */}
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Areas for Improvement</h3>
                   <ul className="space-y-2">
-                    {analysis.weakAreas.map((item, index) => (
+                    {analysis.gaps.map((gap, index) => (
                       <li key={index} className="flex items-start">
                         <X size={16} className="mr-2 text-red-500 mt-1 flex-shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <Separator />
-                
-                {/* Suggestions Section */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Suggestions</h3>
-                  <ul className="space-y-2">
-                    {analysis.suggestions.map((item, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check size={16} className="mr-2 text-green-500 mt-1 flex-shrink-0" />
-                        <span>{item}</span>
+                        <span>{gap}</span>
                       </li>
                     ))}
                   </ul>

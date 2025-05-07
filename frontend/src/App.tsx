@@ -10,7 +10,6 @@ import InterviewQuestionsPage from "./pages/InterviewQuestionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResumeAnalysisPage from "./pages/ResumeAnalysisPage";
 import NotFound from "./pages/NotFound";
-import InterviewPage from "./pages/InterviewPage";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +24,7 @@ const App = () => (
           <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/resume-analysis" element={<ResumeAnalysisPage />} />
-          <Route path="/interview-questions" element={<InterviewPage />} />
+          <Route path="/interview-questions" element={<InterviewQuestionsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
