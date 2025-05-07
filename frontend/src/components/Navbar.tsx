@@ -22,8 +22,11 @@ const Navbar = () => {
             <NavLink to="/dashboard" isActive={isActive('/dashboard')}>
               Dashboard
             </NavLink>
-            <NavLink to="/interview" isActive={isActive('/interview')}>
-              Interview
+            <NavLink to="/resume-analysis" isActive={isActive('/resume-analysis')}>
+              Resume Analysis
+            </NavLink>
+            <NavLink to="/interview-questions" isActive={isActive('/interview-questions')}>
+              Interview Questions
             </NavLink>
             <NavLink to="/profile" isActive={isActive('/profile')}>
               Profile
@@ -36,8 +39,11 @@ const Navbar = () => {
               <MobileNavLink to="/dashboard" isActive={isActive('/dashboard')}>
                 Dashboard
               </MobileNavLink>
-              <MobileNavLink to="/interview" isActive={isActive('/interview')}>
-                Interview
+              <MobileNavLink to="/resume-analysis" isActive={isActive('/resume-analysis')}>
+                Resume
+              </MobileNavLink>
+              <MobileNavLink to="/interview-questions" isActive={isActive('/interview-questions')}>
+                Questions
               </MobileNavLink>
               <MobileNavLink to="/profile" isActive={isActive('/profile')}>
                 Profile

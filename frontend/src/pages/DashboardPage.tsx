@@ -1,20 +1,26 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Upload, FileText, BarChart } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/Navbar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+
+interface AnalysisResult {
+  matchScore: number;
+  matchedSkills: string[];
+  gaps: string[];
+}
 
 const DashboardPage = () => {
   const [resume, setResume] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState<File | null>(null);
-  const [matchScore, setMatchScore] = useState<number | null>(null);
-  const [questions, setQuestions] = useState<string[]>([]);
-  const navigate = useNavigate();
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
-  // Mock upload functions
+  // Handle resume upload
   const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -26,6 +32,7 @@ const DashboardPage = () => {
     }
   };
 
+  // Handle job description upload
   const handleJobDescriptionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -49,6 +56,7 @@ const DashboardPage = () => {
     }
 
     // Simulate loading
+    setIsAnalyzing(true);
     toast({
       title: "Analyzing Documents",
       description: "Please wait while we analyze your documents...",
@@ -58,33 +66,39 @@ const DashboardPage = () => {
     setTimeout(() => {
       // Generate a random match score between 65 and 95
       const score = Math.floor(Math.random() * 31) + 65;
-      setMatchScore(score);
       
-      // Mock generated questions based on common interview questions
-      const mockQuestions = [
-        "Tell me about your experience with ReactJS development.",
-        "How do you handle state management in large applications?",
-        "Describe a challenging project you worked on and how you overcame obstacles.",
-        "What strategies do you use for responsive web design?",
-        "How do you approach debugging complex issues in your code?"
+      // Mock matched skills
+      const matchedSkills = [
+        "React.js",
+        "TypeScript",
+        "Frontend Development",
+        "UI/UX Design",
+        "RESTful APIs"
       ];
       
-      setQuestions(mockQuestions);
-    }, 1500);
-  };
+      // Mock gaps/missing areas
+      const gaps = [
+        "Experience with GraphQL",
+        "Unit testing frameworks",
+        "CI/CD pipeline knowledge",
+        "Docker containerization"
+      ];
 
-  // Start interview function
-  const startInterview = () => {
-    if (questions.length > 0) {
-      navigate('/interview');
-    }
+      setAnalysisResult({
+        matchScore: score,
+        matchedSkills,
+        gaps
+      });
+      
+      setIsAnalyzing(false);
+    }, 1500);
   };
 
   return (
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-center">Interview Assistant Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">Resume & Job Match Analysis</h1>
         
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Resume Upload Section */}
@@ -93,7 +107,7 @@ const DashboardPage = () => {
               <FileText className="mr-2" size={20} />
               Upload Resume
             </h2>
-            <label className="upload-area block">
+            <label className="upload-area block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-all">
               {resume ? (
                 <div className="text-green-600 flex flex-col items-center">
                   <FileText size={48} />
@@ -126,7 +140,7 @@ const DashboardPage = () => {
               <FileText className="mr-2" size={20} />
               Upload Job Description
             </h2>
-            <label className="upload-area block">
+            <label className="upload-area block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-all">
               {jobDescription ? (
                 <div className="text-green-600 flex flex-col items-center">
                   <FileText size={48} />
@@ -158,50 +172,77 @@ const DashboardPage = () => {
         <div className="text-center mb-10">
           <Button 
             onClick={analyzeDocuments}
-            disabled={!resume || !jobDescription}
+            disabled={!resume || !jobDescription || isAnalyzing}
             className="font-semibold py-6 px-8 text-lg"
           >
-            Analyze Documents
+            {isAnalyzing ? "Analyzing..." : "Analyze Documents"}
           </Button>
         </div>
 
         {/* Results Section */}
-        {matchScore && (
-          <div className="border rounded-lg p-6 bg-white shadow-sm mb-8 animate-fade-in">
+        {analysisResult && (
+          <div className="animate-fade-in">
             <h2 className="text-2xl font-semibold mb-6 text-center">Analysis Results</h2>
             
-            {/* Match Score */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2">Resume Match Score</h3>
-              <div className="w-full bg-gray-200 rounded-full h-6">
-                <div 
-                  className={`h-6 rounded-full animated-gradient ${
-                    matchScore >= 80 ? 'bg-green-600' : 
-                    matchScore >= 70 ? 'bg-yellow-500' : 'bg-orange-500'
-                  }`} 
-                  style={{ width: `${matchScore}%` }}
-                ></div>
-              </div>
-              <p className="text-right font-bold mt-1">{matchScore}%</p>
-            </div>
+            {/* Match Score Card */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart className="mr-2" size={20} />
+                  Resume Match Score
+                </CardTitle>
+                <CardDescription>How well your resume matches the job requirements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full bg-gray-200 rounded-full h-6">
+                  <div 
+                    className={`h-6 rounded-full ${
+                      analysisResult.matchScore >= 80 ? 'bg-green-600' : 
+                      analysisResult.matchScore >= 70 ? 'bg-yellow-500' : 'bg-orange-500'
+                    }`} 
+                    style={{ width: `${analysisResult.matchScore}%` }}
+                  ></div>
+                </div>
+                <p className="text-right font-bold mt-1">{analysisResult.matchScore}%</p>
+              </CardContent>
+            </Card>
             
-            {/* Generated Questions */}
-            <div>
-              <h3 className="text-lg font-medium mb-3">Generated Interview Questions</h3>
-              <ul className="space-y-2 mb-6">
-                {questions.map((question, index) => (
-                  <li key={index} className="bg-gray-50 p-3 rounded-lg">
-                    {index + 1}. {question}
-                  </li>
-                ))}
-              </ul>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Matched Skills Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Matched Skills</CardTitle>
+                  <CardDescription>Skills that align with the job requirements</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {analysisResult.matchedSkills.map((skill, index) => (
+                      <li key={index} className="flex items-center">
+                        <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
+                        {skill}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
               
-              <div className="text-center">
-                <Button onClick={startInterview} className="flex items-center">
-                  Start Interview
-                  <ArrowRight size={16} className="ml-2" />
-                </Button>
-              </div>
+              {/* Gaps/Missing Areas Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Skills Gaps</CardTitle>
+                  <CardDescription>Areas to improve based on job requirements</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {analysisResult.gaps.map((gap, index) => (
+                      <li key={index} className="flex items-center">
+                        <span className="h-2 w-2 bg-orange-500 rounded-full mr-2"></span>
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}

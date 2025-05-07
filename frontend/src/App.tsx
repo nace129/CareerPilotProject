@@ -6,9 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
-import InterviewPage from "./pages/InterviewPage";
+import InterviewQuestionsPage from "./pages/InterviewQuestionsPage";
 import ProfilePage from "./pages/ProfilePage";
+import ResumeAnalysisPage from "./pages/ResumeAnalysisPage";
 import NotFound from "./pages/NotFound";
+import InterviewPage from "./pages/InterviewPage";
 
 const queryClient = new QueryClient();
 
@@ -19,10 +21,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/interview" element={<InterviewPage />} />
+          <Route path="/resume-analysis" element={<ResumeAnalysisPage />} />
+          <Route path="/interview-questions" element={<InterviewPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
