@@ -20,10 +20,9 @@ const AuthPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
+  
     if (isLogin) {
       if (!formData.email || !formData.password) {
         toast({
@@ -43,16 +42,66 @@ const AuthPage = () => {
         return;
       }
     }
-    
-    // Simulate login/register without backend
-    toast({
-      title: isLogin ? "Login successful" : "Registration successful",
-      description: "Welcome to Interview Assistant!",
-    });
-    
-    // Navigate to dashboard
-    navigate('/dashboard');
+  
+    try {
+      if (isLogin) {
+        // 🔐 Attempt login with Flask backend
+        const res = await fetch("http://127.0.0.1:5000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+        });
+  
+        const data = await res.json();
+  
+        if (!res.ok) throw new Error(data.error || "Login failed");
+  
+        // 💾 Store user info locally
+        localStorage.setItem("user", JSON.stringify(data.user));
+  
+        toast({ title: "Login successful", description: "Welcome!" });
+        navigate("/dashboard");
+      } else {
+        // 🔐 Attempt registration with Flask backend
+        const res = await fetch("http://127.0.0.1:5000/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.username,  // Use username as name (or split if needed)
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+      
+        const data = await res.json();
+      
+        if (!res.ok) throw new Error(data.error || "Registration failed");
+      
+        // Optionally store user info or redirect
+        toast({
+          title: "Registration successful",
+          description: "Welcome to Career Pilot!",
+        });
+      
+        localStorage.setItem("user", JSON.stringify({
+          name: formData.username,
+          username: formData.username,
+          email: formData.email,
+        }));
+      
+        navigate("/dashboard");
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500 px-4">
