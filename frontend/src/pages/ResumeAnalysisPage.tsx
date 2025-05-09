@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 // Define the structure for resume analysis results
 interface ResumeAnalysis {
@@ -88,8 +89,7 @@ const ResumeAnalysisPage = () => {
           "Content-Type": "application/json"
         },
         credentials: "include"
-      });
-      
+      });      
       const data = await res.json();
       if (!res.ok || !data.analysis) throw new Error(data.error || "Analysis failed");
   
@@ -121,7 +121,7 @@ const ResumeAnalysisPage = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-center">Resume Analysis</h1>
         
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Resume Upload Section */}
           <Card className="mb-6">
             <CardHeader>
@@ -187,10 +187,11 @@ const ResumeAnalysisPage = () => {
                     {analysis.technical_skills.map((skill, index) => (
                       <span 
                         key={index} 
-                        className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                        variant="secondary"
+                        className="bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
                       >
                         {skill}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -231,7 +232,25 @@ const ResumeAnalysisPage = () => {
                 
                 <Separator />
                 
-                {/* Experience Section */}
+                {/* Tools Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Tools & Technologies</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.tools.map((tool, index) => (
+                      <Badge 
+                        key={index}
+                        variant="secondary" 
+                        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        {tool}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                {/* Work Experience Section */}
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Work Experience</h3>
                   <ul className="list-disc pl-5 space-y-1">
@@ -248,12 +267,12 @@ const ResumeAnalysisPage = () => {
                         </div>
                       </li>
                     ))}
-                  </ul>
+                  </div>
                 </div>
                 
                 <Separator />
                 
-                {/* Weak Areas Section */}
+                {/* Gaps Section */}
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Areas for Improvement</h3>
                   <ul className="space-y-2">

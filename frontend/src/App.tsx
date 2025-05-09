@@ -6,11 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
+import InterviewPage from "./pages/InterviewPage";
 import InterviewQuestionsPage from "./pages/InterviewQuestionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResumeAnalysisPage from "./pages/ResumeAnalysisPage";
 import NotFound from "./pages/NotFound";
-import InterviewPage from "./pages/InterviewPage";
 
 const queryClient = new QueryClient();
 

@@ -12,9 +12,9 @@ const ProfilePage = () => {
     avatarUrl: "https://ui-avatars.com/api/?name=John+Doe&background=6366f1&color=fff",
     stats: {
       interviewsTaken: 12,
-      averageMatchScore: 78,
+      lastMatchScore: 78, // Renamed from averageMatchScore
       questionsAnswered: 84,
-      completionRate: 92
+      uploadCount: 16 // Replaced completionRate with uploadCount
     },
     recentUploads: [
       { type: "resume", name: "Software_Developer_Resume.pdf", date: "2025-04-25" },
@@ -66,12 +66,12 @@ const ProfilePage = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500">
-                  Average Match Score
+                  Last Match Score
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{user.stats.averageMatchScore}%</div>
-                <Progress value={user.stats.averageMatchScore} className="h-2 mt-2" />
+                <div className="text-3xl font-bold">{user.stats.lastMatchScore}%</div>
+                <Progress value={user.stats.lastMatchScore} className="h-2 mt-2" />
               </CardContent>
             </Card>
             
@@ -89,12 +89,11 @@ const ProfilePage = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500">
-                  Completion Rate
+                  Upload Count
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{user.stats.completionRate}%</div>
-                <Progress value={user.stats.completionRate} className="h-2 mt-2" />
+                <div className="text-3xl font-bold">{user.stats.uploadCount}</div>
               </CardContent>
             </Card>
           </div>
