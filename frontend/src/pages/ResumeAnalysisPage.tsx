@@ -9,11 +9,16 @@ import { Separator } from "@/components/ui/separator";
 
 // Define the structure for resume analysis results
 interface ResumeAnalysis {
-  skills: string[];
-  education: string[];
-  experience: string[];
-  weakAreas: string[];
-  suggestions: string[];
+  summary: string | null;
+  technical_skills: string[];
+  soft_skills: string[];
+  tools: string[];
+  work_experience: {
+    company: string;
+    role: string;
+    duration: string;
+  }[];
+  gaps: string[];
 }
 
 const ResumeAnalysisPage = () => {
@@ -21,69 +26,94 @@ const ResumeAnalysisPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const { toast } = useToast();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [resumeText, setResumeText] = useState<string | null>(null);
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setResume(file);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+  
+    setResume(file);
+  
+    const formData = new FormData();
+    formData.append("file", file);
+  
+    try {
+      const res = await fetch("http://localhost:5000/upload-resume", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+  
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Resume upload failed");
+  
+      setSessionId(data.session_id);       // 🔑 Store session ID for later
+      setResumeText(data.resume_text);     // Optional if needed for analysis
+      if (!data.session_id) {
+        throw new Error("No session ID returned from backend");
+      }
+
       toast({
         title: "Resume Uploaded",
-        description: `File: ${file.name}`,
+        description: `File: ${file.name}`
+      });
+  
+    } catch (error: any) {
+      toast({
+        title: "Upload Error",
+        description: error.message,
+        variant: "destructive"
       });
     }
-  };
+  };      
 
-  const analyzeResume = () => {
-    if (!resume) {
+  const analyzeResume = async () => {
+    if (!sessionId || !resume) {
       toast({
         title: "Error",
-        description: "Please upload your resume first",
+        description: "Please upload a resume.",
         variant: "destructive"
       });
       return;
     }
-
-    // Simulate loading state
+  
     setIsLoading(true);
-    toast({
-      title: "Analyzing Resume",
-      description: "Please wait while we analyze your resume...",
-    });
-
-    // Mock API call - in a real implementation, this would send the file to a backend
-    setTimeout(() => {
-      // Mock analysis result
-      const mockAnalysis: ResumeAnalysis = {
-        skills: [
-          "React", "TypeScript", "JavaScript", "HTML/CSS", 
-          "Node.js", "Express", "MongoDB", "Git", 
-          "RESTful APIs", "Agile Development"
-        ],
-        education: [
-          "Bachelor's Degree in Computer Science, University of Technology (2018-2022)",
-          "Full Stack Web Development Certification, CodeAcademy (2022)"
-        ],
-        experience: [
-          "Frontend Developer at TechSolutions (2022-Present)",
-          "Web Development Intern at StartupCo (2021)"
-        ],
-        weakAreas: [
-          "Limited experience with cloud platforms (AWS, Azure)",
-          "No mention of testing frameworks or methodologies",
-          "Lacks evidence of team leadership or project management"
-        ],
-        suggestions: [
-          "Add quantifiable achievements and impact metrics for each role",
-          "Include specific examples of projects you've worked on",
-          "Highlight any collaborative work or team contributions",
-          "Consider adding relevant certifications to strengthen your profile"
-        ]
-      };
+  
+    try {
+      const res = await fetch("http://localhost:5000/analyze-resume", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
       
-      setAnalysis(mockAnalysis);
+      const data = await res.json();
+      if (!res.ok || !data.analysis) throw new Error(data.error || "Analysis failed");
+  
+      {analysis ? (
+        <div>show analysis...</div>
+      ) : (
+        <div className="text-center text-gray-500">No analysis yet</div>
+      )}
+
+      setAnalysis(data.analysis);
+      toast({ title: "Success", description: "Resume analyzed successfully" });
+      
+      console.log("Analysis result:", data.analysis);
+  
+    } catch (err: any) {
+      toast({
+        title: "Analysis Error",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 2000);
-  };
+    }
+  };      
 
   return (
     <>
@@ -125,7 +155,7 @@ const ResumeAnalysisPage = () => {
                 <input 
                   type="file" 
                   className="hidden" 
-                  accept=".pdf,.doc,.docx,.txt" 
+                  accept=".pdf" 
                   onChange={handleResumeUpload}
                 />
               </label>
@@ -150,11 +180,11 @@ const ResumeAnalysisPage = () => {
                 <CardDescription>Based on your uploaded resume</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Skills Section */}
+                {/* Tech Skills Section */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Skills</h3>
+                  <h3 className="text-lg font-semibold mb-2">Technical Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {analysis.skills.map((skill, index) => (
+                    {analysis.technical_skills.map((skill, index) => (
                       <span 
                         key={index} 
                         className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded"
@@ -167,14 +197,36 @@ const ResumeAnalysisPage = () => {
                 
                 <Separator />
                 
-                {/* Education Section */}
+                {/* Soft Skills Section */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Education</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {analysis.education.map((item, index) => (
-                      <li key={index}>{item}</li>
+                  <h3 className="text-lg font-semibold mb-2">Soft Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.soft_skills.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                      >
+                        {skill}
+                      </span>
                     ))}
-                  </ul>
+                  </div>
+                </div>
+
+                <Separator />
+                
+                {/* Tools Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Tools</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.tools.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
                 <Separator />
@@ -183,8 +235,18 @@ const ResumeAnalysisPage = () => {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Work Experience</h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    {analysis.experience.map((item, index) => (
-                      <li key={index}>{item}</li>
+                    {analysis.work_experience.map((item, index) => (
+                      <li key={index}>
+                        <div>
+                          <strong>Company:</strong> {item.company}
+                        </div>
+                        <div>
+                          <strong>Role:</strong> {item.role}
+                        </div>
+                        <div>
+                          <strong>Duration:</strong> {item.duration}
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -195,7 +257,7 @@ const ResumeAnalysisPage = () => {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Areas for Improvement</h3>
                   <ul className="space-y-2">
-                    {analysis.weakAreas.map((item, index) => (
+                    {analysis.gaps.map((item, index) => (
                       <li key={index} className="flex items-start">
                         <X size={16} className="mr-2 text-red-500 mt-1 flex-shrink-0" />
                         <span>{item}</span>
@@ -204,20 +266,9 @@ const ResumeAnalysisPage = () => {
                   </ul>
                 </div>
                 
-                <Separator />
+
                 
-                {/* Suggestions Section */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Suggestions</h3>
-                  <ul className="space-y-2">
-                    {analysis.suggestions.map((item, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check size={16} className="mr-2 text-green-500 mt-1 flex-shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                
               </CardContent>
             </Card>
           )}

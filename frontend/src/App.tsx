@@ -25,7 +25,11 @@ const App = () => (
           <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/resume-analysis" element={<ResumeAnalysisPage />} />
-          <Route path="/interview-questions" element={<InterviewPage />} />
+          <Route path="/interview" element={<InterviewPage />} />
+        <Route
+          path="/interview-questions"
+          element={<InterviewQuestionsPage />}
+        />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

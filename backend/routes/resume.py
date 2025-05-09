@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask import session  # ✅ enables server-side session storage
 from backend.utils.db import get_collection
 from backend.utils.gemini_resume import analyze_resume
 import fitz
@@ -22,25 +23,26 @@ def upload_resume():
             return jsonify({"error": "Only PDF files are supported"}), 400
 
         resume_text = extract_text(file)
-        save_resume_to_mongodb(file.filename, resume_text)
+        session_id = save_resume_to_mongodb(file.filename, resume_text)
 
-        return jsonify({"status": "saved", "filename": file.filename})
+        session["resume_session_id"] = session_id  # ✅ store in Flask session
+
+        return jsonify({"status": "uploaded", "filename": file.filename,"session_id": session_id})
 
     except Exception as e:
-            print(f"🔥 Upload Resume Error: {e}")
-            return jsonify({"error": str(e)}), 500
+        print(f"🔥 Upload Resume Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @resume_api.route("/analyze-resume", methods=["POST"])
 def analyze_resume_api():
     try:
-        data = request.get_json()
-        # resume_text = data.get("resume_text")
-        session_id = data.get("session_id")
-        user_id = data.get("user_id", "spartan@sjsu.edu")
+        session_id = session.get("resume_session_id")  # ✅ get from Flask session
+        user_id = "spartan@sjsu.com"
+
+        if not session_id:
+            return jsonify({"error": "No resume session ID in session"}), 400
 
         resume_doc = resumes_col.find_one({"session_id": session_id})
-        # if not resume_text or not session_id:
-        #     return jsonify({"error": "Missing resume text or session ID"}), 400
         if not resume_doc:
             return jsonify({"error": "Resume not found"}), 404
 
@@ -50,7 +52,12 @@ def analyze_resume_api():
             "user_id": user_id,
             "analysis": result
         })
-        return jsonify({"status": "analyzed", "session_id": session_id, "analysis": result})
+        return jsonify({
+            "status": "analyzed",
+            "session_id": session_id,
+            "analysis": result
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -66,3 +73,4 @@ def save_resume_to_mongodb(filename, resume_text):
         "resume_text": resume_text
     }
     resumes_col.insert_one(record)
+    return session_id  # ✅ return session_id

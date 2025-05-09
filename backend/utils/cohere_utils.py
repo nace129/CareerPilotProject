@@ -5,7 +5,7 @@ import json
 
 co = cohere.Client(os.getenv("COHERE_API_KEY"))
 
-def generate_questions(resume_analysis, jd_analysis):
+def generate_questions(resume_analysis, jd_analysis,role, company):
     resume_json = json.dumps(resume_analysis, indent=2)
     jd_json = json.dumps(jd_analysis, indent=2)
 
@@ -19,7 +19,7 @@ Here is the structured Job Description Analysis:
 {jd_json}
 
 Using the above information, generate **highly personalized technical and behavioral interview questions** tailored to:
-1. The role and company described in the job description.
+1. The {role} and company described in the job description of the {company}.
 2. The candidate's actual experience and skill gaps.
 
 Make sure to cover:
@@ -33,14 +33,38 @@ Return 8–10 interview questions.
 """
 
     response = co.chat(
-        model='command-r-plus',
+        model='command-xlarge-nightly',
         message=prompt,
         # max_tokens=500,
         temperature=0.7
     )
 
-    return safe_extract_json(response.text)
+    try:
+        return safe_extract_json(response.text)
+    except json.JSONDecodeError:
+        # fallback: wrap in array
+        return []
 
+def analyze_answer(answer_text: str):
+    prompt = f"""
+You are an expert interviewer providing feedback.  
+Candidate answer: "{answer_text}"
+
+Point out strengths, weaknesses, and suggestions for improvement.
+Return as JSON: {{ "feedback": "…" }}
+"""
+    response = co.chat(
+        model='command-xlarge-nightly',
+        message=prompt,
+        # max_tokens=500,
+        temperature=0.7
+    )
+    try:
+        data = safe_extract_json(response.text)
+        return data.get("feedback", response.generations[0].text)
+    except:
+        return safe_extract_json(response.text)
+    
 
 def calculate_match_score(resume_analysis, jd_analysis):
     resume_json = json.dumps(resume_analysis, indent=2)
@@ -81,4 +105,4 @@ def safe_extract_json(text):
             return json.loads(match.group(1))
         except json.JSONDecodeError:
             return {"error": "Invalid JSON in response", "raw": match.group(1)}
-    return {"error": "No JSON block found", "raw": text}
+    return {"raw": text}

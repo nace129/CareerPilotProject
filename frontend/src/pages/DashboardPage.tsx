@@ -1,254 +1,349 @@
-
-import React, { useState } from 'react';
+// src/pages/DashboardPage.tsx
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, BarChart } from 'lucide-react';
+import { Upload, FileText, BarChart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import Navbar from "@/components/Navbar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import ReactMarkdown from "react-markdown";
+
+interface ApiMatchScore {
+  match_score: {
+    raw: string;
+    error?: string;
+  };
+  session_id: string;
+}
 
 interface AnalysisResult {
   matchScore: number;
+  rawContent: string;
   matchedSkills: string[];
   gaps: string[];
 }
 
-const DashboardPage = () => {
+export default function DashboardPage() {
   const [resume, setResume] = useState<File | null>(null);
-  const [jobDescription, setJobDescription] = useState<File | null>(null);
+  const [jdFile, setJdFile] = useState<File | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  const [loadingResume, setLoadingResume] = useState(false);
+  const [loadingJd, setLoadingJd] = useState(false);
+  const [loadingMatch, setLoadingMatch] = useState(false);
+
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   const { toast } = useToast();
 
-  // Handle resume upload
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setResume(file);
-      toast({
-        title: "Resume Uploaded",
-        description: `File: ${file.name}`,
+  // helper to extract bullet points under a ### header
+  const extractSection = (raw: string, header: string) => {
+    const parts = raw.split(`### ${header}`);
+    if (parts.length < 2) return [];
+    return parts[1]
+      .split("###")[0]
+      .split("\n")
+      .filter((l) => l.trim().startsWith("- "))
+      .map((l) => l.replace(/^- /, "").trim());
+  };
+
+  // 1️⃣ Upload & analyze resume
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResume(file);
+    setLoadingResume(true);
+
+    const form = new FormData();
+    form.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:5000/dashboard-upload-resume", {
+        method: "POST",
+        body: form,
       });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to upload resume");
+      setSessionId(json.session_id);
+      //after you setSessionId(json.session_id);
+      localStorage.setItem("session_id", json.session_id);
+      toast({ title: "✅ Resume saved & analyzed" });
+    } catch (err: any) {
+      toast({
+        title: "Upload Error",
+        description: err.message,
+        variant: "destructive",
+      });
+      setResume(null);
+    } finally {
+      setLoadingResume(false);
     }
   };
 
-  // Handle job description upload
-  const handleJobDescriptionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setJobDescription(file);
-      toast({
-        title: "Job Description Uploaded",
-        description: `File: ${file.name}`,
-      });
-    }
-  };
-
-  // Mock analysis function
-  const analyzeDocuments = () => {
-    if (!resume || !jobDescription) {
+  // 2️⃣ Upload & analyze JD
+  const handleJdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!sessionId) {
       toast({
         title: "Error",
-        description: "Please upload both your resume and the job description",
-        variant: "destructive"
+        description: "Please upload your resume first.",
+        variant: "destructive",
       });
       return;
     }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setJdFile(file);
+    setLoadingJd(true);
 
-    // Simulate loading
-    setIsAnalyzing(true);
-    toast({
-      title: "Analyzing Documents",
-      description: "Please wait while we analyze your documents...",
-    });
+    const text = await file.text();
+    try {
+      const res = await fetch("http://localhost:5000/dashboard-upload-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, jd_text: text }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to upload JD");
+      toast({ title: "✅ JD saved & analyzed" });
+    } catch (err: any) {
+      toast({
+        title: "JD Upload Error",
+        description: err.message,
+        variant: "destructive",
+      });
+      setJdFile(null);
+    } finally {
+      setLoadingJd(false);
+    }
+  };
 
-    // Simulate API delay and response
-    setTimeout(() => {
-      // Generate a random match score between 65 and 95
-      const score = Math.floor(Math.random() * 31) + 65;
-      
-      // Mock matched skills
-      const matchedSkills = [
-        "React.js",
-        "TypeScript",
-        "Frontend Development",
-        "UI/UX Design",
-        "RESTful APIs"
-      ];
-      
-      // Mock gaps/missing areas
-      const gaps = [
-        "Experience with GraphQL",
-        "Unit testing frameworks",
-        "CI/CD pipeline knowledge",
-        "Docker containerization"
-      ];
+  // 3️⃣ Fetch match-score
+  const analyzeDocuments = async () => {
+    if (!sessionId) {
+      toast({
+        title: "Error",
+        description: "Missing session ID",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLoadingMatch(true);
+
+    try {
+      const res = await fetch("http://localhost:5000/match-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const json: ApiMatchScore = await res.json();
+      if (!res.ok) throw new Error(json.match_score.error || "Match-score failed");
+
+      const raw = json.match_score.raw;
+      // extract percentage
+      const pctMatch = parseInt((raw.match(/Match Score:\s*(\d+)%/) || [])[1] || "0", 10);
+
+      // extract sections
+      const matchedSkills = extractSection(raw, "Skill Match:");
+      const gaps = extractSection(raw, "Gaps or Missing Elements:");
 
       setAnalysisResult({
-        matchScore: score,
+        matchScore: pctMatch,
+        rawContent: raw,
         matchedSkills,
-        gaps
+        gaps,
       });
-      
-      setIsAnalyzing(false);
-    }, 1500);
+      toast({ title: "✅ Analysis complete" });
+    } catch (err: any) {
+      toast({
+        title: "Analysis Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMatch(false);
+    }
+  };
+
+  // custom renderer: bold headers & bullet each sentence
+  const renderDetailed = (raw: string) => {
+    // split by section
+    const sections = raw.split("\n\n### ");
+    return sections.map((sec, i) => {
+      // first section starts with "Match Score:"
+      if (i === 0) {
+        return (
+          <div key={i} className="mb-4">
+            <strong>Match Score:</strong> {sec.split("\n")[0]}
+          </div>
+        );
+      }
+      // others: header: content
+      const [headerLine, ...restLines] = sec.split("\n");
+      const header = headerLine.replace(/^### /, "");
+      // join rest
+      const content = restLines.join(" ").trim();
+      // if already has bullets, keep
+      if (content.startsWith("- ")) {
+        return (
+          <div key={i} className="mb-4">
+            <strong>{header}</strong>
+            <ul className="list-disc ml-6 mt-2">
+              {content
+                .split("\n")
+                .filter((l) => l.startsWith("- "))
+                .map((l, idx) => (
+                  <li key={idx}>{l.replace(/^- /, "")}</li>
+                ))}
+            </ul>
+          </div>
+        );
+      }
+      // else split sentences into bullets
+      const sentences = content.split(". ").filter((s) => s.trim());
+      return (
+        <div key={i} className="mb-4">
+          <strong>{header}</strong>
+          <ul className="list-disc ml-6 mt-2">
+            {sentences.map((s, idx) => (
+              <li key={idx}>{s.endsWith(".") ? s : s + "."}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    });
   };
 
   return (
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-center">Resume & Job Match Analysis</h1>
-        
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Resume Upload Section */}
-          <div className="border rounded-lg p-6 bg-white shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FileText className="mr-2" size={20} />
-              Upload Resume
-            </h2>
-            <label className="upload-area block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-all">
-              {resume ? (
-                <div className="text-green-600 flex flex-col items-center">
-                  <FileText size={48} />
-                  <span className="mt-2 font-medium">{resume.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {(resume.size / 1024).toFixed(1)} KB
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center text-gray-500">
-                  <Upload size={48} />
-                  <span className="mt-2 font-medium">Upload your resume</span>
-                  <span className="text-sm">
-                    PDF, .doc/.docx, or .txt files only
-                  </span>
-                </div>
-              )}
-              <input 
-                type="file" 
-                className="hidden" 
-                accept=".pdf,.doc,.docx,.txt" 
-                onChange={handleResumeUpload}
-              />
-            </label>
-          </div>
+        <h1 className="text-3xl font-bold mb-8 text-center">
+          Resume & Job Match Analysis
+        </h1>
 
-          {/* Job Description Upload Section */}
-          <div className="border rounded-lg p-6 bg-white shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FileText className="mr-2" size={20} />
-              Upload Job Description
-            </h2>
-            <label className="upload-area block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-all">
-              {jobDescription ? (
-                <div className="text-green-600 flex flex-col items-center">
-                  <FileText size={48} />
-                  <span className="mt-2 font-medium">{jobDescription.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {(jobDescription.size / 1024).toFixed(1)} KB
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center text-gray-500">
-                  <Upload size={48} />
-                  <span className="mt-2 font-medium">Upload job description</span>
-                  <span className="text-sm">
-                    PDF, .doc/.docx, or .txt files only
-                  </span>
-                </div>
-              )}
-              <input 
-                type="file" 
-                className="hidden" 
-                accept=".pdf,.doc,.docx,.txt" 
-                onChange={handleJobDescriptionUpload}
-              />
-            </label>
-          </div>
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2" /> Resume
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <label className="cursor-pointer border-2 border-dashed rounded-lg p-6 inline-block w-full">
+                {resume ? resume.name : <span className="text-gray-500">Click to upload PDF</span>}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  disabled={loadingResume}
+                  onChange={handleResumeUpload}
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2" /> Job Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <label className="cursor-pointer border-2 border-dashed rounded-lg p-6 inline-block w-full">
+                {jdFile ? jdFile.name : <span className="text-gray-500">Click to upload .txt</span>}
+                <input
+                  type="file"
+                  accept=".txt"
+                  className="hidden"
+                  disabled={!sessionId || loadingJd}
+                  onChange={handleJdUpload}
+                />
+              </label>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Analysis Button */}
         <div className="text-center mb-10">
-          <Button 
-            onClick={analyzeDocuments}
-            disabled={!resume || !jobDescription || isAnalyzing}
-            className="font-semibold py-6 px-8 text-lg"
-          >
-            {isAnalyzing ? "Analyzing..." : "Analyze Documents"}
+          <Button onClick={analyzeDocuments} disabled={!sessionId || loadingMatch}>
+            {loadingMatch ? "Analyzing…" : "Analyze Documents"}
           </Button>
         </div>
 
-        {/* Results Section */}
         {analysisResult && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-semibold mb-6 text-center">Analysis Results</h2>
-            
-            {/* Match Score Card */}
-            <Card className="mb-6">
+          <div className="space-y-6">
+            {/* Match % Gauge */}
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <BarChart className="mr-2" size={20} />
-                  Resume Match Score
+                  <BarChart className="mr-2" /> Match Score
                 </CardTitle>
-                <CardDescription>How well your resume matches the job requirements</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="w-full bg-gray-200 rounded-full h-6">
-                  <div 
-                    className={`h-6 rounded-full ${
-                      analysisResult.matchScore >= 80 ? 'bg-green-600' : 
-                      analysisResult.matchScore >= 70 ? 'bg-yellow-500' : 'bg-orange-500'
-                    }`} 
+                <div className="w-full bg-gray-200 h-4 rounded-full mb-2">
+                  <div
+                    className={`h-4 rounded-full ${
+                      analysisResult.matchScore >= 80
+                        ? "bg-green-600"
+                        : analysisResult.matchScore >= 70
+                        ? "bg-yellow-500"
+                        : "bg-orange-500"
+                    }`}
                     style={{ width: `${analysisResult.matchScore}%` }}
-                  ></div>
+                  />
                 </div>
-                <p className="text-right font-bold mt-1">{analysisResult.matchScore}%</p>
+                <p className="text-right font-bold">{analysisResult.matchScore}%</p>
               </CardContent>
             </Card>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Matched Skills Card */}
+
+            {/* Detailed Analysis in bold headers + bullets */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Detailed Analysis</CardTitle>
+                <CardDescription>
+                  Breakdown of how your resume aligns (and where gaps are)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderDetailed(analysisResult.rawContent)}
+              </CardContent>
+            </Card>
+
+            {/* Matched Skills & Gaps */}
+            {/* <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Matched Skills</CardTitle>
-                  <CardDescription>Skills that align with the job requirements</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {analysisResult.matchedSkills.map((skill, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-                        {skill}
-                      </li>
+                  <ul className="list-disc ml-6">
+                    {analysisResult.matchedSkills.map((s, i) => (
+                      <li key={i}>{s}</li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
-              
-              {/* Gaps/Missing Areas Card */}
+
               <Card>
                 <CardHeader>
                   <CardTitle>Skills Gaps</CardTitle>
-                  <CardDescription>Areas to improve based on job requirements</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {analysisResult.gaps.map((gap, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="h-2 w-2 bg-orange-500 rounded-full mr-2"></span>
-                        {gap}
-                      </li>
+                  <ul className="list-disc ml-6">
+                    {analysisResult.gaps.map((g, i) => (
+                      <li key={i}>{g}</li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
           </div>
         )}
       </div>
     </>
   );
-};
-
-export default DashboardPage;
+}

@@ -25,8 +25,11 @@ const Navbar = () => {
             <NavLink to="/resume-analysis" isActive={isActive('/resume-analysis')}>
               Resume Analysis
             </NavLink>
-            <NavLink to="/interview-questions" isActive={isActive('/interview-questions')}>
+            {/* <NavLink to="/interview-questions" isActive={isActive('/interview-questions')}>
               Interview Questions
+            </NavLink> */}
+            <NavLink to="/interview" isActive={isActive('/interview')}>
+            Interview Questions
             </NavLink>
             <NavLink to="/profile" isActive={isActive('/profile')}>
               Profile

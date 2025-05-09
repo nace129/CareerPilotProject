@@ -9,9 +9,6 @@ model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
 
 def analyze_resume(resume_text: str) -> dict:
-    # model = genai.Model(model_name="gemini-1.5-pro")
-    # response = model.generate_content(f"Extract structured skills, experience, education from this resume: {resume_text}")
-    # return response.text
     prompt = f"""
     You are a resume analysis assistant. Analyze the following resume content and return a JSON object with these fields:
 
