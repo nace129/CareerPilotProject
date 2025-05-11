@@ -14,7 +14,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/dashboard" className="font-bold text-xl text-indigo-600">
-            InterviewAI
+            CareerPilot
           </Link>
           
           {/* Navigation Links */}

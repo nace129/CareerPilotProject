@@ -161,141 +161,141 @@ const InterviewQuestionsPage = () => {
   );
 };
 
-export default InterviewQuestionsPage;
+ export default InterviewQuestionsPage;
 
-// // src/pages/InterviewQuestionsPage.tsx
-// // src/pages/InterviewQuestionsPage.tsx
-import React, { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate }             from "react-router-dom";
-import { Button }                                from "@/components/ui/button";
-import Navbar                                    from "@/components/Navbar";
-import { useToast }                              from "@/components/ui/use-toast";
-import ReactMarkdown                             from "react-markdown";
+// // // src/pages/InterviewQuestionsPage.tsx
+// // // src/pages/InterviewQuestionsPage.tsx
+// import React, { useState, useRef, useEffect } from "react";
+// import { useLocation, useNavigate }             from "react-router-dom";
+// import { Button }                                from "@/components/ui/button";
+// import Navbar                                    from "@/components/Navbar";
+// import { useToast }                              from "@/components/ui/use-toast";
+// import ReactMarkdown                             from "react-markdown";
 
-interface Question { id: string; text: string; }
-interface LocationState { session_id: string; questions: Question[]; }
+// interface Question { id: string; text: string; }
+// interface LocationState { session_id: string; questions: Question[]; }
 
-export default function InterviewQuestionsPage() {
-  const { state } = useLocation() as { state?: LocationState };
-  const navigate  = useNavigate();
-  const { toast } = useToast();
+// export default function InterviewQuestionsPage() {
+//   const { state } = useLocation() as { state?: LocationState };
+//   const navigate  = useNavigate();
+//   const { toast } = useToast();
 
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [sessionId, setSessionId] = useState<string>("");
-  const [current, setCurrent]     = useState(0);
-  const [file, setFile]           = useState<File|null>(null);
-  const [feedback, setFeedback]   = useState<string>("");
-  const [loading, setLoading]     = useState(false);
+//   const [questions, setQuestions] = useState<Question[]>([]);
+//   const [sessionId, setSessionId] = useState<string>("");
+//   const [current, setCurrent]     = useState(0);
+//   const [file, setFile]           = useState<File|null>(null);
+//   const [feedback, setFeedback]   = useState<string>("");
+//   const [loading, setLoading]     = useState(false);
 
-  const fileInput = useRef<HTMLInputElement>(null);
+//   const fileInput = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    // fallback to localStorage
-    let qs = state?.questions;
-    let sid = state?.session_id;
-    if (!qs) {
-      qs  = JSON.parse(localStorage.getItem("interviewQuestions") || "[]");
-      sid = localStorage.getItem("interviewSession") || "";
-    }
-    if (!qs.length || !sid) {
-      toast({ title: "No interview data", variant: "destructive" });
-      return navigate("/interview", { replace: true });
-    }
-    setQuestions(qs);
-    setSessionId(sid);
-  }, []);
+//   useEffect(() => {
+//     // fallback to localStorage
+//     let qs = state?.questions;
+//     let sid = state?.session_id;
+//     if (!qs) {
+//       qs  = JSON.parse(localStorage.getItem("interviewQuestions") || "[]");
+//       sid = localStorage.getItem("interviewSession") || "";
+//     }
+//     if (!qs.length || !sid) {
+//       toast({ title: "No interview data", variant: "destructive" });
+//       return navigate("/interview", { replace: true });
+//     }
+//     setQuestions(qs);
+//     setSessionId(sid);
+//   }, []);
 
-  if (!questions.length) return null;
+//   if (!questions.length) return null;
 
-  const handleSubmit = async () => {
-    if (!file) {
-      return toast({ title: "Upload your audio first", variant: "destructive" });
-    }
+//   const handleSubmit = async () => {
+//     if (!file) {
+//       return toast({ title: "Upload your audio first", variant: "destructive" });
+//     }
 
-    setLoading(true);
-    try {
-      const form = new FormData();
-      form.append("session_id",  sessionId);
-      form.append("question_id", questions[current].id);
-      form.append("file",        file);
+//     setLoading(true);
+//     try {
+//       const form = new FormData();
+//       form.append("session_id",  sessionId);
+//       form.append("question_id", questions[current].id);
+//       form.append("file",        file);
 
-      const res = await fetch("http://localhost:5000/submit-answer", {
-        method: "POST",
-        body: form
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Submission failed");
+//       const res = await fetch("http://localhost:5000/submit-answer", {
+//         method: "POST",
+//         body: form
+//       });
+//       const json = await res.json();
+//       if (!res.ok) throw new Error(json.error || "Submission failed");
 
-      setFeedback(json.feedback);
-      setFile(null);
+//       setFeedback(json.feedback);
+//       setFile(null);
 
-    } catch(err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
+//     } catch(err: any) {
+//       toast({ title: "Error", description: err.message, variant: "destructive" });
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
-  const nextQuestion = () => {
-    if (current < questions.length - 1) {
-      setFeedback("");
-      setCurrent(i => i + 1);
-    } else {
-      toast({ title: "Interview Complete", description: "You've answered all questions!" });
-    }
-  };
+//   const nextQuestion = () => {
+//     if (current < questions.length - 1) {
+//       setFeedback("");
+//       setCurrent(i => i + 1);
+//     } else {
+//       toast({ title: "Interview Complete", description: "You've answered all questions!" });
+//     }
+//   };
 
-  return (
-    <>
-      <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-2xl font-bold mb-4">Mock Interview</h1>
+//   return (
+//     <>
+//       <Navbar />
+//       <div className="container mx-auto px-4 py-8 max-w-2xl">
+//         <h1 className="text-2xl font-bold mb-4">Mock Interview</h1>
 
-        <div className="mb-6 p-4 bg-gray-50 rounded">
-          <p className="font-semibold">
-            Question {current + 1} of {questions.length}
-          </p>
-          <div className="mt-2 prose">
-            <ReactMarkdown>{questions[current].text}</ReactMarkdown>
-          </div>
-        </div>
+//         <div className="mb-6 p-4 bg-gray-50 rounded">
+//           <p className="font-semibold">
+//             Question {current + 1} of {questions.length}
+//           </p>
+//           <div className="mt-2 prose">
+//             <ReactMarkdown>{questions[current].text}</ReactMarkdown>
+//           </div>
+//         </div>
 
-        {feedback && (
-          <div className="mb-6 p-4 bg-green-50 border-green-200 rounded">
-            <h2 className="font-semibold mb-2">Feedback</h2>
-            <p>{feedback}</p>
-          </div>
-        )}
+//         {feedback && (
+//           <div className="mb-6 p-4 bg-green-50 border-green-200 rounded">
+//             <h2 className="font-semibold mb-2">Feedback</h2>
+//             <p>{feedback}</p>
+//           </div>
+//         )}
 
-        <div className="flex items-center mb-6 space-x-4">
-          <button
-            onClick={() => fileInput.current?.click()}
-            className="p-3 bg-gray-100 rounded-full"
-          >
-            Upload Answer 🎤
-          </button>
-          {file && <span>{file.name}</span>}
-          <input
-            ref={fileInput}
-            type="file"
-            accept="audio/*"
-            className="hidden"
-            onChange={e => setFile(e.target.files?.[0] || null)}
-          />
-        </div>
+//         <div className="flex items-center mb-6 space-x-4">
+//           <button
+//             onClick={() => fileInput.current?.click()}
+//             className="p-3 bg-gray-100 rounded-full"
+//           >
+//             Upload Answer 🎤
+//           </button>
+//           {file && <span>{file.name}</span>}
+//           <input
+//             ref={fileInput}
+//             type="file"
+//             accept="audio/*"
+//             className="hidden"
+//             onChange={e => setFile(e.target.files?.[0] || null)}
+//           />
+//         </div>
 
-        <div className="flex space-x-2">
-          <Button onClick={handleSubmit} disabled={loading || !file} className="flex-1">
-            {loading ? "Submitting…" : "Submit Answer"}
-          </Button>
-          <Button onClick={nextQuestion} disabled={loading} variant="outline" className="flex-1">
-            Next Question
-          </Button>
-        </div>
-      </div>
-    </>
-  );
-}
+//         <div className="flex space-x-2">
+//           <Button onClick={handleSubmit} disabled={loading || !file} className="flex-1">
+//             {loading ? "Submitting…" : "Submit Answer"}
+//           </Button>
+//           <Button onClick={nextQuestion} disabled={loading} variant="outline" className="flex-1">
+//             Next Question
+//           </Button>
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
 
 
 
