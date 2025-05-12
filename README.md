@@ -134,7 +134,7 @@ cd ../frontend
 npm start
 ```
 
-The application should now be running at http://localhost:3000.
+The application should now be running at http://localhost:8080.
 
 ## Contributing
 Contributions are welcome! Please follow these steps:
