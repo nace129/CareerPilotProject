@@ -1,5 +1,8 @@
 # CareerPilot
 
+##Project Demo
+https://drive.google.com/file/d/1h6Vh4KMHrJBNatjAiiclVpT1Py6-i6mL/view?usp=sharing
+
 ## Abstract
 With the increasing competitiveness in job markets, candidates often struggle to prepare effectively for interviews. CareerPilot is an AI-powered Automated Interview Preparation Assistant that personalizes interview questions, evaluates candidate responses, and provides real-time feedback on both technical and behavioral interviews.
 
